@@ -1,0 +1,3 @@
+tracebasedlogsampler:
+  buffer_duration_traces: 180s
+  buffer_duration_logs: 90s
