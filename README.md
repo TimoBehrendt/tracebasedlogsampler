@@ -1,4 +1,4 @@
-# Trace-based Log Sampling
+# Trace-based Log Sampler
 
 This processor is used to sample logs based on the sampling decision of the trace they correlate to.
 
