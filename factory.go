@@ -38,7 +38,7 @@ func createTracesProcessor(ctx context.Context, set processor.Settings, cfg comp
 	logger := set.Logger
 	tpCfg := cfg.(*Config)
 
-	traceProc := NewLogSamplerProcessorSingleton(logger, nextConsumer, nil, tpCfg)
+	traceProc := NewLogSamplerProcessorSingleton(set.ID, logger, nextConsumer, nil, tpCfg)
 
 	return traceProc, nil
 }
@@ -47,7 +47,7 @@ func createLogsProcessor(ctx context.Context, set processor.Settings, cfg compon
 	logger := set.Logger
 	lpCfg := cfg.(*Config)
 
-	logProc := NewLogSamplerProcessorSingleton(logger, nil, nextConsumer, lpCfg)
+	logProc := NewLogSamplerProcessorSingleton(set.ID, logger, nil, nextConsumer, lpCfg)
 
 	return logProc, nil
 }
