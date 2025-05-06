@@ -89,22 +89,34 @@ func (tp *LogSamplerProcessor) Capabilities() consumer.Capabilities {
 }
 
 /**
- * For each trace, record the trace id in a buffer.
+ * Every trace's trace id that is processed by the processor is being remembered.
  */
 func (tp *LogSamplerProcessor) ConsumeTraces(ctx context.Context, td ptrace.Traces) error {
-	traceId := td.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0).TraceID()
+	for i := range td.ResourceSpans().Len() {
+		resourceSpans := td.ResourceSpans().At(i)
 
-	if !traceId.IsEmpty() {
-		tp.traceIdTtlMap.Add(hex.EncodeToString(traceId[:]))
+		for j := range resourceSpans.ScopeSpans().Len() {
+			scopeSpans := resourceSpans.ScopeSpans().At(j)
 
-		tp.logger.Debug("Trace added to buffer", zap.String("traceId", hex.EncodeToString(traceId[:])))
+			for k := range scopeSpans.Spans().Len() {
+				span := scopeSpans.Spans().At(k)
+				traceId := span.TraceID()
+
+				if !traceId.IsEmpty() {
+					traceIdStr := hex.EncodeToString(traceId[:])
+					tp.traceIdTtlMap.Add(traceIdStr)
+
+					tp.logger.Debug("Trace added to buffer", zap.String("traceId", traceIdStr))
+				}
+			}
+		}
 	}
 
 	return tp.nextTracesConsumer.ConsumeTraces(ctx, td)
 }
 
 /**
- * Upon receiving a log, check if the log's trace id matches any trace id in the buffer.
+ * Upon receiving logs, check if each log's trace id matches any trace id in the buffer.
  * If it doesn't, put the log in the buffer for the configured amount of time.
  * If it does, forward the log.
  *
@@ -112,32 +124,62 @@ func (tp *LogSamplerProcessor) ConsumeTraces(ctx context.Context, td ptrace.Trac
  * If it does, forward the log.
  * If not, discard the log.
  */
-func (tp *LogSamplerProcessor) ConsumeLogs(ctx context.Context, log plog.Logs) error {
-	traceId := log.ResourceLogs().At(0).ScopeLogs().At(0).LogRecords().At(0).TraceID()
+func (tp *LogSamplerProcessor) ConsumeLogs(ctx context.Context, logs plog.Logs) error {
+	// Rough estimation of the number of unique trace ids in the logs as the number of logs itself.
+	// It may be an option to make this configurable or use runtime metrics to zero in on the right size.
+	logsByTraceId := make(map[string]plog.Logs, logs.LogRecordCount())
 
-	if !traceId.IsEmpty() {
-		exists := tp.traceIdTtlMap.Exists(hex.EncodeToString(traceId[:]))
+	for i := range logs.ResourceLogs().Len() {
+		resourceLogs := logs.ResourceLogs().At(i)
+		for j := range resourceLogs.ScopeLogs().Len() {
+			scopeLogs := resourceLogs.ScopeLogs().At(j)
+			for k := range scopeLogs.LogRecords().Len() {
+				logRecord := scopeLogs.LogRecords().At(k)
+				traceId := logRecord.TraceID()
+
+				if !traceId.IsEmpty() {
+					traceIdStr := hex.EncodeToString(traceId[:])
+
+					batch, exists := logsByTraceId[traceIdStr]
+					if !exists {
+						batch = plog.NewLogs()
+						logsByTraceId[traceIdStr] = batch
+					}
+
+					batchResourceLogs := batch.ResourceLogs().AppendEmpty()
+					resourceLogs.Resource().CopyTo(batchResourceLogs.Resource())
+					batchScopeLogs := batchResourceLogs.ScopeLogs().AppendEmpty()
+					scopeLogs.Scope().CopyTo(batchScopeLogs.Scope())
+					newRecord := batchScopeLogs.LogRecords().AppendEmpty()
+					logRecord.CopyTo(newRecord)
+				} else {
+					tp.logger.Warn("Log has no trace id", zap.Any("log", logs))
+				}
+			}
+		}
+	}
+
+	for traceIdStr, batch := range logsByTraceId {
+		exists := tp.traceIdTtlMap.Exists(traceIdStr)
 		if exists {
-			tp.logger.Debug("Log forwarded directly", zap.String("traceId", hex.EncodeToString(traceId[:])))
-			return tp.nextLogsConsumer.ConsumeLogs(ctx, log)
+			tp.logger.Debug("Logs forwarded directly", zap.String("traceId", traceIdStr))
+			tp.nextLogsConsumer.ConsumeLogs(ctx, batch)
+			continue
 		}
 
-		go func(ctx context.Context, log plog.Logs) {
-			tp.logger.Debug("Log added to buffer", zap.String("traceId", hex.EncodeToString(traceId[:])))
-
+		go func(ctx context.Context, traceIdStr string, batch plog.Logs) {
+			tp.logger.Debug("Logs added to buffer", zap.String("traceId", traceIdStr))
 			duration, _ := time.ParseDuration(tp.config.BufferDurationLogs)
 			time.Sleep(duration)
 
-			exists := tp.traceIdTtlMap.Exists(hex.EncodeToString(traceId[:]))
+			exists := tp.traceIdTtlMap.Exists(traceIdStr)
 			if exists {
-				tp.logger.Debug("Log forwarded after buffer expiration", zap.String("traceId", hex.EncodeToString(traceId[:])))
-				tp.nextLogsConsumer.ConsumeLogs(ctx, log)
+				tp.logger.Debug("Logs forwarded after buffer expiration", zap.String("traceId", traceIdStr))
+				tp.nextLogsConsumer.ConsumeLogs(ctx, batch)
 			} else {
-				tp.logger.Debug("Log discarded", zap.String("traceId", hex.EncodeToString(traceId[:])))
+				tp.logger.Debug("Logs discarded", zap.String("traceId", traceIdStr))
 			}
-		}(ctx, log)
-	} else {
-		tp.logger.Warn("Log has no trace id", zap.Any("log", log))
+		}(ctx, traceIdStr, batch)
 	}
 
 	return nil
