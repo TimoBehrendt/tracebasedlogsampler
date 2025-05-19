@@ -90,19 +90,7 @@ func (m *TTLMap) Add(key string) {
  * Removes the trace id from the map if it has expired.
  */
 func (m *TTLMap) Exists(key string) bool {
-	m.mu.RLock()
-	value, ok := m.m[key]
-	m.mu.RUnlock()
-
-	if ok {
-		if value < time.Now().Unix() {
-			m.mu.Lock()
-			delete(m.m, key)
-			m.mu.Unlock()
-			return false
-		}
-	}
-
+	_, ok := m.Get(key)
 	return ok
 }
 
@@ -118,13 +106,32 @@ func (m *TTLMap) insertEntry(key string, value int64) {
 
 /**
  * Gets an entry from the map.
+ */
+func (m *TTLMap) Get(key string) (int64, bool) {
+	m.mu.RLock()
+	value, ok := m.m[key]
+	m.mu.RUnlock()
+
+	if ok {
+		if value < time.Now().Unix() {
+			m.mu.Lock()
+			delete(m.m, key)
+			m.mu.Unlock()
+			return 0, false
+		}
+	}
+
+	return value, ok
+}
+
+/**
+ * Gets an entry from the map.
  * Only used for testing.
  */
 func (m *TTLMap) getEntry(key string) (int64, bool) {
 	m.mu.RLock()
 	value, ok := m.m[key]
 	m.mu.RUnlock()
-
 	return value, ok
 }
 
