@@ -1,0 +1,31 @@
+name: CI & Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  ci:
+    uses: ./.gitea/workflows/ci.yaml
+
+  release:
+    needs: ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install -g standard-version
+      - run: |
+          git config --global user.name "Release Bot"
+          git config --global user.email "release-bot@t00n.de"
+      - run: |
+          standard-version --no-verify --skip-changelog
+          tag=$(git describe --tags --abbrev=0)
+          git push origin "$tag"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITEA_TOKEN }}
