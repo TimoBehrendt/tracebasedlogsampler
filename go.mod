@@ -29,13 +29,13 @@ require (
 	github.com/stretchr/objx v0.5.2 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/collector/component/componentstatus v0.144.0 // indirect
-	go.opentelemetry.io/collector/consumer/xconsumer v0.144.0 // indirect
-	go.opentelemetry.io/collector/featuregate v1.50.0 // indirect
-	go.opentelemetry.io/collector/internal/componentalias v0.144.0 // indirect
+	go.opentelemetry.io/collector/consumer/xconsumer v0.145.0 // indirect
+	go.opentelemetry.io/collector/featuregate v1.51.0 // indirect
+	go.opentelemetry.io/collector/internal/componentalias v0.145.0 // indirect
 	go.opentelemetry.io/collector/internal/telemetry v0.129.0 // indirect
-	go.opentelemetry.io/collector/pdata/pprofile v0.144.0 // indirect
-	go.opentelemetry.io/collector/pdata/testdata v0.144.0 // indirect
-	go.opentelemetry.io/collector/pipeline v1.50.0 // indirect
+	go.opentelemetry.io/collector/pdata/pprofile v0.145.0 // indirect
+	go.opentelemetry.io/collector/pdata/testdata v0.145.0 // indirect
+	go.opentelemetry.io/collector/pipeline v1.51.0 // indirect
 	go.opentelemetry.io/collector/processor/xprocessor v0.144.0 // indirect
 	go.opentelemetry.io/contrib/bridges/otelzap v0.11.0 // indirect
 	go.opentelemetry.io/otel v1.39.0 // indirect
@@ -56,13 +56,13 @@ require (
 )
 
 require (
-	go.opentelemetry.io/collector/component v1.50.0
+	go.opentelemetry.io/collector/component v1.51.0
 	go.opentelemetry.io/collector/component/componenttest v0.144.0
 	go.opentelemetry.io/collector/confmap v1.50.0
-	go.opentelemetry.io/collector/consumer v1.50.0
-	go.opentelemetry.io/collector/consumer/consumertest v0.144.0
-	go.opentelemetry.io/collector/pdata v1.50.0
-	go.opentelemetry.io/collector/processor v1.50.0
+	go.opentelemetry.io/collector/consumer v1.51.0
+	go.opentelemetry.io/collector/consumer/consumertest v0.145.0
+	go.opentelemetry.io/collector/pdata v1.51.0
+	go.opentelemetry.io/collector/processor v1.51.0
 	go.opentelemetry.io/collector/processor/processortest v0.144.0
 	go.uber.org/multierr v1.11.0 // indirect
 )
