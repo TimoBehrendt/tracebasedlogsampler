@@ -58,7 +58,7 @@ require (
 require (
 	go.opentelemetry.io/collector/component v1.56.0
 	go.opentelemetry.io/collector/component/componenttest v0.150.0
-	go.opentelemetry.io/collector/confmap v1.55.0
+	go.opentelemetry.io/collector/confmap v1.56.0
 	go.opentelemetry.io/collector/consumer v1.56.0
 	go.opentelemetry.io/collector/consumer/consumertest v0.150.0
 	go.opentelemetry.io/collector/pdata v1.56.0
