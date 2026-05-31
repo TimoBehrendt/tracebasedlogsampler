@@ -1,4 +1,14 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["local>t.behrendt/renovate-configs:action"]
+  "extends": ["local>t.behrendt/renovate-configs:action"],
+  "packageRules": [
+    {
+      "description": "Group all OpenTelemetry Go modules into a single PR",
+      "matchManagers": ["gomod"],
+      "matchDatasources": ["go"],
+      "matchPackageNames": ["go.opentelemetry.io/**"],
+      "groupName": "opentelemetry go",
+      "groupSlug": "opentelemetry-go"
+    }
+  ]
 }
